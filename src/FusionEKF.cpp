@@ -24,12 +24,12 @@ FusionEKF::FusionEKF() {
 
   //measurement covariance matrix - laser
   R_laser_ << 0.0225, 0,
-        0, 0.0225;
+              0, 0.0225;
 
   //measurement covariance matrix - radar
   R_radar_ << 0.09, 0, 0,
-        0, 0.0009, 0,
-        0, 0, 0.09;
+              0, 0.0009, 0,
+              0, 0, 0.09;
 
   /**
   TODO:
@@ -43,19 +43,6 @@ FusionEKF::FusionEKF() {
          1, 1, 0, 0,
          1, 1, 1, 1; 
 
-  //the initial transition matrix F_
-  ekf_.F_ = MatrixXd(4, 4);
-  ekf_.F_ << 1, 0, 1, 0,
-             0, 1, 0, 1,
-             0, 0, 1, 0,
-             0, 0, 0, 1;
-
-  //state covariance matrix P
-  ekf_.P_ = MatrixXd(4, 4);
-  ekf_.P_ << 1, 0, 0, 0,
-             0, 1, 0, 0,
-             0, 0, 1000, 0,
-             0, 0, 0, 1000;
 
 }
 
@@ -81,6 +68,23 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     cout << "EKF: Initializing" << endl;
     ekf_.x_ = VectorXd(4);
     ekf_.x_ << 1, 1, 1, 1;
+    //state covariance matrix P
+    ekf_.P_ = MatrixXd(4, 4);
+    ekf_.P_ << 1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1000, 0,
+    0, 0, 0, 1000;
+    //the initial transition matrix F_
+    ekf_.F_ = MatrixXd(4, 4);
+    ekf_.F_ << 1, 0, 1, 0,
+    0, 1, 0, 1,
+    0, 0, 1, 0,
+    0, 0, 0, 1;
+    ekf_.Q_ = MatrixXd(4, 4);
+    ekf_.Q_ << 0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0;
 
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       /**
@@ -135,15 +139,25 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   ekf_.F_(1, 3) = dt;
 
   //Set the noise vals
-  float noise_ax = 9.0;
-  float noise_ay = 9.0;
+  float sig_ax2 = 9.0;
+  float sig_ay2 = 9.0;
   //set the process covariance matrix Q
-  ekf_.Q_ = MatrixXd(4, 4);
-  ekf_.Q_ <<  dt_4/4*noise_ax, 0, dt_3/2*noise_ax, 0,
-  0, dt_4/4*noise_ay, 0, dt_3/2*noise_ay,
-  dt_3/2*noise_ax, 0, dt_2*noise_ax, 0,
-  0, dt_3/2*noise_ay, 0, dt_2*noise_ay;
-
+  MatrixXd Qv(2, 2);
+  Qv(0, 0) = sig_ax2; Qv(0, 1) = 0.0;
+  Qv(1, 0) = 0.0;     Qv(1, 1) = sig_ay2;
+  MatrixXd G(4, 2);
+  G(0, 0) = dt_2/2.0; G(0, 1) = 0.0;
+  G(1, 0) = 0.0;      G(1, 1) = dt_2/2.0;
+  G(2, 0) = dt;       G(2, 1) = 0.0;
+  G(3, 0) = 0.0;      G(3, 1) = dt;
+  ekf_.Q_ = G * Qv * G.transpose();
+/*
+  ekf_.Q_ <<
+  dt_4/4*sig_ax2,    0,                dt_3/2*sig_ax2, 0,
+  0,                   dt_4/4*sig_ay2, 0,                dt_3/2*sig_ay2,
+  dt_3/2*sig_ax2,    0,                dt_2*sig_ax2,   0,
+  0,                   dt_3/2*sig_ay2, 0,                dt_2*sig_ay2;
+*/
   // Predict
   ekf_.Predict();
 
