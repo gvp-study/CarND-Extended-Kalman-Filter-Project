@@ -13,7 +13,6 @@ KalmanFilter::~KalmanFilter() {}
 
 void KalmanFilter::Init(VectorXd &x_in, MatrixXd &P_in, MatrixXd &F_in,
                         MatrixXd &H_in, MatrixXd &R_in, MatrixXd &Q_in) {
-  std::cout << "Init Called" << std::endl;
   x_ = x_in;
   P_ = P_in;
   F_ = F_in;
@@ -38,6 +37,7 @@ void KalmanFilter::Update(const VectorXd &z) {
   */
   VectorXd z_pred = H_ * x_;
   VectorXd y = z - z_pred;
+  // Take care of the angle wrap at +- 180
   if(y[1] > M_PI)
     y[1] -= 2.0*M_PI;
   else if(y[1] < -M_PI)
@@ -67,6 +67,7 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   VectorXd z_pred(3);
   z_pred[0] = r; z_pred[1] = phi; z_pred[2] = rdot;
   VectorXd y = z - z_pred;
+  // Take care of the angle wrap at +- 180
   if(y[1] > M_PI)
     y[1] -= 2.0*M_PI;
   else if(y[1] < -M_PI)
