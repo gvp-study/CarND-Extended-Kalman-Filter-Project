@@ -3,37 +3,46 @@
 
 **Extended Kalman Filter Project**
 
-The goals / steps of this project are the following:
+The goal of this project are the following:
 
-* Implement the Extended Kalman Filter for fusing the Lidar and Radar measurements to estimate the position of a tracked object from the car.
-*
+Implement the Extended Kalman Filter for fusing the Lidar and Radar measurements to estimate the position of a tracked object from the car.
 
 [//]: # (Image References)
 [image1]: ./examples/tracked-points.png
-[image2]: ./examples/flowchart.jpg
+[image2]: ./examples/flowchart.png
 
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
-### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.
-
-All the code for this project has been obtained from the example code in the course and is in this directory.
+All the code for this project has been derived from the example code in the course and is in this directory.
 [Here](https://github.com/gvp-study/CarND-Extended-Kalman-Filter-Project.git)
 ---
 
 ### Extended Kalman Filter
 
-#### 1. Prediction from the motion
+#### 1. Compiling
+The code in the directory compiles without errors using cmake .. && make.
 
+#### 2. Accuracy
+The root mean squared error for the (px, py, vx, vy) is [0.0973, 0.0855, 0.4513, 0.4399] <= [0.11, 0.11, 0.52, 0.52]. This can be seen from the standard output when it runs ./ExtendedEKF program with the simulator running. The final values can also be seen in the right side of the figure below.
 
 ![alt text][image1]
 
-#### 2. Correction from the measurement
+#### 3. Follows the Correct Algorithm
+I did not change the structure of the given code, so the sensor fusion algorithm flow is exactly as described in the lessons as shown in the figure below.
 
 ![alt text][image2]
+
+I made sure that the state vector ekf_.x was initialized to the first given measurement. I also made sure that the covariance matrix ekf_.P was initialized to a diagonal matrix at the start with appropriate values for the position and velocity states.
+The FusionEKF::ProcessMeasurements() function first predicts the state from the previous state using the plant matrix F and then updates the state with the new measurement based on the Kalman equations.
+The update step uses the appropriate H and R matrices based on the kind of measurement it gets. If it is a Lidar measurement it uses the linear form of the kalman filter. If it is a Radar measurement, it uses the extended kalman filter to update.
+
+#### 4. Avoid Unnecessary Calculations
+
 ---
 
 ### Discussion
 
-#### 8. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+#### 5. Stand out
+I have used the Q = G * A * Gt form to compute the Q matrix.
 
-I was able to get the error within the specified limits for both the example runs.
+I put in the angle wrap check for the Radar phi angle measurement. When this measurement is subtracted from the estimated phi in the state vector, it could cause the value to be 2*pi if the phi is close to pi or -pi. This check keeps the difference in phi to be continuous near this value.
